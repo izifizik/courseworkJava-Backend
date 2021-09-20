@@ -18,9 +18,9 @@ public class UserController {
     }
 
     @PostMapping(value = "/api/user")
-    public ResponseEntity<?> create(@RequestBody User user) {
+    public ResponseEntity<Integer> create(@RequestBody User user) {
         userService.insertUser(user);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        return new ResponseEntity<>(user.getId(), HttpStatus.CREATED);
     }
 
     @GetMapping(value = "/api/user/{id}")
@@ -31,12 +31,6 @@ public class UserController {
             return new ResponseEntity<>(user, HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    }
-    @GetMapping(value = "/api/user")
-    public ResponseEntity<String> user() {
-        final String req = userService.user();
-
-        return new ResponseEntity<>(req, HttpStatus.OK);
     }
 
     @PutMapping(value = "/api/user/{id}")

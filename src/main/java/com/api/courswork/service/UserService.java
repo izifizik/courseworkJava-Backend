@@ -7,8 +7,6 @@ import java.util.List;
 public interface UserService {
     void insertUser(User user);
 
-    String user();
-
     User findById(int Id);
 
     boolean updateUserById(User user, int Id);

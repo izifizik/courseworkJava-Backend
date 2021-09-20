@@ -15,11 +15,6 @@ public class UserServiceImpl implements UserService {
     private static final AtomicInteger USER_ID_HOLDER = new AtomicInteger();
 
     @Override
-    public String user() {
-        return "Ya rabotay";
-    }
-
-    @Override
     public void insertUser(User user) {
         final int userId = USER_ID_HOLDER.incrementAndGet();
         user.setId(userId);
