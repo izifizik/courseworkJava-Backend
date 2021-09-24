@@ -1,15 +1,8 @@
 package com.api.courswork.service;
 
 import com.api.courswork.model.User;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-import java.util.List;
-
-public interface UserService {
-    void insertUser(User user);
-
-    User findById(int Id);
-
-    boolean updateUserById(User user, int Id);
-
-    boolean deleteUserById(int Id);
+public interface UserService extends MongoRepository<User, Integer> {
+    User findFirstById(String id);
 }

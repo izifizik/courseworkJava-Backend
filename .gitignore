@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# other
+/src/main/java/com/api/courswork/config/.env
+src/main/resources/application.properties

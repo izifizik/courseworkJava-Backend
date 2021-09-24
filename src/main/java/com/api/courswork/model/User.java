@@ -1,28 +1,25 @@
 package com.api.courswork.model;
 
+import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.List;
+
+@Data // lombok feature which write inside @ToString, @EqualsAndHashCode, @Getter / @Setter and @RequiredArgsConstructor
+@Document(collection = "users")
 public class User {
-    private Integer id;
+
+    @Id // that mean it is id
+    private String id;
     private String username;
     private String password;
+    private List<String> myEvents;
 
-    public Integer getId() {
-        return id;
-    }
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-    public void setUsername(String username) {
+    public User(String username, String password, List<String> myEvents) {
         this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-    public void setPassword(String password) {
         this.password = password;
+        this.myEvents = myEvents;
     }
 }
