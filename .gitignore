@@ -34,4 +34,4 @@ build/
 
 # other
 /src/main/java/com/api/courswork/config/.env
-src/main/resources/application.properties
+src/main/resources

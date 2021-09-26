@@ -17,6 +17,8 @@ public class User {
     private String password;
     private List<String> myEvents;
 
+    public User() { }
+
     public User(String username, String password, List<String> myEvents) {
         this.username = username;
         this.password = password;

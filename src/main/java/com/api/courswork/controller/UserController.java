@@ -13,7 +13,7 @@ import java.util.Map;
 
 @CrossOrigin("http://localhost:8080")
 @RestController
-@RequestMapping("/v1/api")
+@RequestMapping(value = "/api/v1")
 public class UserController {
 
     @Autowired
@@ -21,38 +21,42 @@ public class UserController {
 
     @GetMapping("/user/{id}")
     public ResponseEntity<?> getUser(@PathVariable("id") String id) {
+        Map<String, Object> jsonOut = new LinkedHashMap<>();
         try {
-            Map<String, Object> jsonOut = new LinkedHashMap<>();
-
-            User user;
-            user = service.findFirstById(id);
+            User user = service.findFirstById(id);
 
             if (user == null) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                jsonOut.put("message", "NOT_FOUND");
+                return new ResponseEntity<>(jsonOut, HttpStatus.NOT_FOUND);
             }
 
+            jsonOut.put("id", user.getId());
             jsonOut.put("username", user.getUsername());
             jsonOut.put("MyEvents", user.getMyEvents());
 
             return new ResponseEntity<>(jsonOut, HttpStatus.OK);
         } catch (Exception e) {
-            Map<String, Object> jsonOut = new LinkedHashMap<>();
-
             jsonOut.put("ErrorMessage", e.getMessage());
             return new ResponseEntity<>(jsonOut, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PostMapping("/user/register")
-    public ResponseEntity<?> createUser(@RequestBody User user) {
+    public ResponseEntity<?> createUser(@RequestBody Map<String, Object> body) {
+        Map<String, Object> jsonOut = new LinkedHashMap<>();
         try {
-            String hashedPassword = hashPassword(user.getPassword());
-            service.save(new User(user.getUsername(), hashedPassword, user.getMyEvents()));
+            User user = new User();
+            user.setUsername(body.get("username").toString());
+            user.setPassword(hashPassword(body.get("password").toString()));
 
-            return new ResponseEntity<>(HttpStatus.OK);
+            service.save(new User(user.getUsername(), user.getPassword(), user.getMyEvents()));
+
+            user = service.findFirstByUsername(body.get("username").toString());
+
+            jsonOut.put("id", user.getId());
+            jsonOut.put("message", "OK");
+            return new ResponseEntity<>(jsonOut, HttpStatus.OK);
         } catch (Exception e) {
-            Map<String, Object> jsonOut = new LinkedHashMap<>();
-
             jsonOut.put("ErrorMessage", e.getMessage());
             return new ResponseEntity<>(jsonOut, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -60,24 +64,24 @@ public class UserController {
 
     @PostMapping("/user/auth")
     public ResponseEntity<?> authUser(@RequestBody User user) {
+        Map<String, Object> jsonOut = new LinkedHashMap<>();
         try {
-            User authUser = service.findFirstById(user.getId());
+            User authUser = service.findFirstByUsername(user.getUsername());
 
             if (authUser == null) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                jsonOut.put("message", "NOT_FOUND");
+                return new ResponseEntity<>(jsonOut, HttpStatus.NOT_FOUND);
             }
 
-            if (!checkPassword(user.getPassword(), authUser.getPassword())) {
-                Map<String, Object> jsonOut = new LinkedHashMap<>();
+            if (checkPassword(user.getPassword(), authUser.getPassword())) {
                 jsonOut.put("message", "Incorrect password");
                 return new ResponseEntity<>(jsonOut, HttpStatus.BAD_REQUEST);
             }
 
-            return new ResponseEntity<>( HttpStatus.OK);
-
+            jsonOut.put("id", authUser.getId());
+            jsonOut.put("message", "OK");
+            return new ResponseEntity<>(jsonOut, HttpStatus.OK);
         } catch (Exception e) {
-            Map<String, Object> jsonOut = new LinkedHashMap<>();
-
             jsonOut.put("ErrorMessage", e.getMessage());
             return new ResponseEntity<>(jsonOut, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -85,11 +89,18 @@ public class UserController {
 
     @PutMapping("/user/{id}")
     public ResponseEntity<?> updateUser(@PathVariable("id") String id, @RequestBody User user) {
+        Map<String, Object> jsonOut = new LinkedHashMap<>();
         try {
             User updateUser = service.findFirstById(id);
 
             if (updateUser == null) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                jsonOut.put("message", "NOT_FOUND");
+                return new ResponseEntity<>(jsonOut, HttpStatus.NOT_FOUND);
+            }
+
+            if (checkPassword(user.getPassword(), updateUser.getPassword())) {
+                jsonOut.put("message", "Incorrect password");
+                return new ResponseEntity<>(jsonOut, HttpStatus.BAD_REQUEST);
             }
 
             String hashedPassword = hashPassword(user.getPassword());
@@ -99,10 +110,9 @@ public class UserController {
 
             service.save(updateUser);
 
-            return new ResponseEntity<>(HttpStatus.OK);
+            jsonOut.put("message", "OK");
+            return new ResponseEntity<>(jsonOut, HttpStatus.OK);
         } catch (Exception e) {
-            Map<String, Object> jsonOut = new LinkedHashMap<>();
-
             jsonOut.put("ErrorMessage", e.getMessage());
             return new ResponseEntity<>(jsonOut, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -110,18 +120,19 @@ public class UserController {
 
     @DeleteMapping("/user/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable("id") String id) {
+        Map<String, Object> jsonOut = new LinkedHashMap<>();
         try {
             User user = service.findFirstById(id);
 
             if (user == null) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                jsonOut.put("message", "NOT_FOUND");
+                return new ResponseEntity<>(jsonOut, HttpStatus.NOT_FOUND);
             }
             service.delete(user);
 
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            jsonOut.put("message", "OK");
+            return new ResponseEntity<>(jsonOut, HttpStatus.NO_CONTENT);
         } catch (Exception e) {
-            Map<String, Object> jsonOut = new LinkedHashMap<>();
-
             jsonOut.put("ErrorMessage", e.getMessage());
             return new ResponseEntity<>(jsonOut, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -153,13 +164,13 @@ public class UserController {
      * @return boolean - true if the password matches the password of the stored hash, false otherwise
      */
     public static boolean checkPassword(String password_plaintext, String stored_hash) {
-        boolean password_verified = false;
+        boolean result = false;
 
         if (null == stored_hash || !stored_hash.startsWith("$2a$"))
             throw new java.lang.IllegalArgumentException("Invalid hash provided for comparison");
 
-        password_verified = BCrypt.checkpw(password_plaintext, stored_hash);
+        result = BCrypt.checkpw(password_plaintext, stored_hash);
 
-        return password_verified;
+        return !result;
     }
 }
