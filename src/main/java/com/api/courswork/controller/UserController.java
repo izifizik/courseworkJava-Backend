@@ -32,8 +32,25 @@ public class UserController {
 
             jsonOut.put("id", user.getId());
             jsonOut.put("username", user.getUsername());
-            jsonOut.put("MyEvents", user.getMyEvents());
+            jsonOut.put("admin", user.getAdmin());
+            jsonOut.put("message", "Ok");
 
+            return new ResponseEntity<>(jsonOut, HttpStatus.OK);
+        } catch (Exception e) {
+            jsonOut.put("ErrorMessage", e.getMessage());
+            return new ResponseEntity<>(jsonOut, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @DeleteMapping("/user/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable("id") String id) {
+        Map<String, Object> jsonOut = new LinkedHashMap<>();
+        try {
+            User user = service.findFirstById(id);
+
+            service.delete(user);
+
+            jsonOut.put("ErrorMessage", null);
             return new ResponseEntity<>(jsonOut, HttpStatus.OK);
         } catch (Exception e) {
             jsonOut.put("ErrorMessage", e.getMessage());
@@ -45,13 +62,9 @@ public class UserController {
     public ResponseEntity<?> createUser(@RequestBody Map<String, Object> body) {
         Map<String, Object> jsonOut = new LinkedHashMap<>();
         try {
-            User user = new User();
-            user.setUsername(body.get("username").toString());
-            user.setPassword(hashPassword(body.get("password").toString()));
+            User user = new User(body.get("username").toString(), hashPassword(body.get("password").toString()), false);
 
-            service.save(new User(user.getUsername(), user.getPassword(), user.getMyEvents()));
-
-            user = service.findFirstByUsername(body.get("username").toString());
+            service.save(user);
 
             jsonOut.put("id", user.getId());
             jsonOut.put("message", "OK");
@@ -87,57 +100,6 @@ public class UserController {
         }
     }
 
-    @PutMapping("/user/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable("id") String id, @RequestBody User user) {
-        Map<String, Object> jsonOut = new LinkedHashMap<>();
-        try {
-            User updateUser = service.findFirstById(id);
-
-            if (updateUser == null) {
-                jsonOut.put("message", "NOT_FOUND");
-                return new ResponseEntity<>(jsonOut, HttpStatus.NOT_FOUND);
-            }
-
-            if (checkPassword(user.getPassword(), updateUser.getPassword())) {
-                jsonOut.put("message", "Incorrect password");
-                return new ResponseEntity<>(jsonOut, HttpStatus.BAD_REQUEST);
-            }
-
-            String hashedPassword = hashPassword(user.getPassword());
-            updateUser.setUsername(user.getUsername());
-            updateUser.setPassword(hashedPassword);
-            updateUser.setMyEvents(user.getMyEvents());
-
-            service.save(updateUser);
-
-            jsonOut.put("message", "OK");
-            return new ResponseEntity<>(jsonOut, HttpStatus.OK);
-        } catch (Exception e) {
-            jsonOut.put("ErrorMessage", e.getMessage());
-            return new ResponseEntity<>(jsonOut, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @DeleteMapping("/user/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable("id") String id) {
-        Map<String, Object> jsonOut = new LinkedHashMap<>();
-        try {
-            User user = service.findFirstById(id);
-
-            if (user == null) {
-                jsonOut.put("message", "NOT_FOUND");
-                return new ResponseEntity<>(jsonOut, HttpStatus.NOT_FOUND);
-            }
-            service.delete(user);
-
-            jsonOut.put("message", "OK");
-            return new ResponseEntity<>(jsonOut, HttpStatus.NO_CONTENT);
-        } catch (Exception e) {
-            jsonOut.put("ErrorMessage", e.getMessage());
-            return new ResponseEntity<>(jsonOut, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     /**
      * This method can be used to generate a string representing an account password
      * suitable for storing in a database. It will be an OpenBSD-style crypt(3) formatted
@@ -145,8 +107,9 @@ public class UserController {
      * The bcrypt workload is specified in the above static variable, a value from 10 to 31.
      * A workload of 12 is a very reasonable safe default as of 2013.
      * This automatically handles secure 128-bit salt generation and storage within the hash.
+     *
      * @param password_plaintext The account's plaintext password as provided during account creation,
-     *			     or when changing an account's password.
+     *                           or when changing an account's password.
      * @return String - a string of length 60 that is the bcrypt hashed password in crypt(3) format.
      */
     public static String hashPassword(String password_plaintext) {
@@ -159,8 +122,9 @@ public class UserController {
      * This method can be used to verify a computed hash from a plaintext (e.g. during a login
      * request) with that of a stored hash from a database. The password hash from the database
      * must be passed as the second variable.
+     *
      * @param password_plaintext The account's plaintext password, as provided during a login request
-     * @param stored_hash The account's stored password hash, retrieved from the authorization database
+     * @param stored_hash        The account's stored password hash, retrieved from the authorization database
      * @return boolean - true if the password matches the password of the stored hash, false otherwise
      */
     public static boolean checkPassword(String password_plaintext, String stored_hash) {

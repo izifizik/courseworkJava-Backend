@@ -5,18 +5,17 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data // lombok feature which write inside @ToString, @EqualsAndHashCode, @Getter / @Setter and @RequiredArgsConstructor
-@Document(collection = "users")
-public class User {
-
+@Document(collection = "storage")
+public class Storage {
     @Id // that mean it is id
     private String id;
-    private String username;
-    private String password;
-    private Boolean admin;
+    private String title;
+    private String description;
+    private Integer count;
 
-    public User(String username, String password, Boolean admin) {
-        this.username = username;
-        this.password = password;
-        this.admin = admin;
+    public Storage(String title, String description, Integer count) {
+        this.title = title;
+        this.description = description;
+        this.count = count;
     }
 }
